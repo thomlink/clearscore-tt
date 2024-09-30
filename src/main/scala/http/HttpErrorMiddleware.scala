@@ -1,14 +1,10 @@
 package http
 
-import cats.{Monad, MonadThrow}
 import cats.data.Kleisli
 import cats.implicits._
+import cats.{Monad, MonadThrow}
 import creditcards.service
-import creditcards.service.{
-  CreditCardsServiceError,
-  RequestTimedOut,
-  UnexpectedServiceError
-}
+import creditcards.service.{CreditCardsServiceError, RequestTimedOut, UnexpectedServiceError}
 import http.model.DecodeIncomingBodyFailure
 import org.http4s.HttpRoutes
 

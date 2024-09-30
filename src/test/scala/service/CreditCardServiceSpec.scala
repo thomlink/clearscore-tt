@@ -1,6 +1,11 @@
 package service
 
-import creditcards.client.model.{CSEligibility, SCApprovalRating, SinglarCSCard, SinglarScoredCard}
+import creditcards.client.model.{
+  CSEligibility,
+  SCApprovalRating,
+  SinglarCSCard,
+  SinglarScoredCard
+}
 import creditcards.service.model._
 import creditcards.service.{ErrorFetchingCardDetails, InvalidCreditScore}
 import eu.timepit.refined.auto._
@@ -101,15 +106,6 @@ object CreditCardServiceSpec extends SimpleIOSuite with Checkers {
         maybeError =>
           passIfExpectedError(maybeError, ErrorFetchingCardDetails(clientError))
       }
-    //      service.cardsForUser(username, creditScore.value, salary).attempt.map {
-    //        case Right(cs) => failure(s"Expected error, got $cs")
-    //        case Left(ErrorFetchingCardDetails(ce)) => expect(ce == clientError)
-    //        case Left(other) =>
-    //          failure(
-    //            s"Didn't fail correctly. Expected ErrorFetchingCardDetails got $other"
-    //          )
-    //      }
-    //
     }
   }
 
@@ -130,15 +126,6 @@ object CreditCardServiceSpec extends SimpleIOSuite with Checkers {
     service.cardsForUser(username, creditScore, salary).attempt.map { feither =>
       passIfExpectedError(feither, InvalidCreditScore)
     }
-
-//    service.cardsForUser(username, creditScore, salary).attempt.map {
-//      case Right(cs)                => failure(s"Expected error, got $cs")
-//      case Left(InvalidCreditScore) => success
-//      case Left(other) =>
-//        failure(
-//          s"Didn't fail correctly. Expected ErrorFetchingCardDetails got $other"
-//        )
-//    }
 
   }
 

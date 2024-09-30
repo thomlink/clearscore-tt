@@ -5,13 +5,12 @@ import cats.implicits._
 import cats.{Applicative, Monad, MonadThrow}
 import creditcards.service.CreditCardsService
 import creditcards.service.model.CardDetails
-import http.model.{CreditCardsRequest, DecodeIncomingBodyFailure}
 import http.model.CreditCardsRequest.decoder
+import http.model.{CreditCardsRequest, DecodeIncomingBodyFailure}
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.{HttpRoutes, _}
-import org.http4s.EntityEncoder._
 
 object Routes {
 

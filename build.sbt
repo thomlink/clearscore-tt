@@ -40,7 +40,6 @@ lazy val root = (project in file("."))
       "eu.timepit"    %% "refined-cats"     % refinedVersion,
       "com.beachape"  %% "enumeratum"       % enumeratumVersion,
       "com.beachape"  %% "enumeratum-circe" % enumeratumVersion
-//      "eu.timepit"    %% "refined-circe" % refinedVersion
     ),
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
     scalacOptions += "-Wnonunit-statement"

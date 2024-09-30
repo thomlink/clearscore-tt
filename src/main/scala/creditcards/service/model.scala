@@ -1,29 +1,13 @@
 package creditcards.service
 
 import creditcards.client.model.{CSEligibility, SCApprovalRating}
-import eu.timepit.refined.api.{RefType, Refined, Validate}
+import enumeratum.{CirceEnum, Enum, EnumEntry}
+import eu.timepit.refined.api.{RefType, Refined}
 import eu.timepit.refined.numeric.Interval
-import io.circe.{Decoder, Encoder}
-import io.circe.generic.JsonCodec
-import io.circe.generic.extras.semiauto.{
-  deriveUnwrappedDecoder,
-  deriveUnwrappedEncoder
-}
-import eu.timepit.refined._
-import eu.timepit.refined.auto._
-import eu.timepit.refined.numeric._
-import eu.timepit.refined.boolean._
-import eu.timepit.refined.char._
-import eu.timepit.refined.collection._
-import eu.timepit.refined.generic._
-import eu.timepit.refined.string._
-import io.circe.Decoder
-import io.circe.Encoder
-import io.circe.refined.refinedDecoder
-import enumeratum.CirceEnum
-import enumeratum.Enum
-import enumeratum.EnumEntry
+import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
 import io.circe.generic.semiauto.deriveEncoder
+import io.circe.refined.refinedDecoder
+import io.circe.{Decoder, Encoder}
 
 object model {
 

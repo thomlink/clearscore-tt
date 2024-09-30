@@ -3,11 +3,10 @@ package http
 import cats.effect.{Async, IO, Resource}
 import com.comcast.ip4s.{IpLiteralSyntax, Port}
 import creditcards.AppClients
-import creditcards.config.AppConfig
 import creditcards.service.CreditCardsServiceImpl
+import org.http4s.HttpRoutes
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Server
-import org.http4s.{HttpRoutes, Response}
 import org.typelevel.log4cats.Logger
 
 object Server {

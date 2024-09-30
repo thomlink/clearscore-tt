@@ -1,13 +1,11 @@
 package creditcards.config
 
 import cats.MonadThrow
-import cats.effect.{Async, IO}
+import cats.effect.Async
 import cats.implicits._
 import ciris.{ConfigDecoder, env}
 import com.comcast.ip4s.Port
 import org.http4s.Uri
-
-import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 case class CsCardsBaseUri(uri: Uri)
 case class ScoredCardsBaseUri(uri: Uri)
