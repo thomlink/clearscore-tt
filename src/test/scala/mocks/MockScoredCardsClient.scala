@@ -1,8 +1,8 @@
 package mocks
 
 import cats.effect.IO
-import creditcards.client.ScoredCardsClient
-import creditcards.client.model.CardsClientError.NotFound
+import creditcards.client.CardsClientError.NotFound
+import creditcards.client.{CardsClientError, ScoredCardsClient}
 import creditcards.client.model._
 import creditcards.service.model._
 

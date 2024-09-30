@@ -2,10 +2,10 @@ package http
 
 import cats.effect._
 import cats.implicits._
-import cats.{Monad, MonadThrow}
+import cats.{Applicative, Monad, MonadThrow}
 import creditcards.service.CreditCardsService
 import creditcards.service.model.CardDetails
-import http.model.CreditCardsRequest
+import http.model.{CreditCardsRequest, DecodeIncomingBodyFailure}
 import http.model.CreditCardsRequest.decoder
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.circe._
@@ -27,10 +27,18 @@ object Routes {
     implicit val cardDetailsEncoder: EntityEncoder[F, CardDetails] =
       jsonEncoderOf[F, CardDetails]
 
-    HttpRoutes.of[F] {
+    val routes = HttpRoutes.of[F] {
       case req @ POST -> Root / "creditcards" =>
         for {
-          ccRequest <- req.as[CreditCardsRequest]
+          // First try to decode the message body. If it fails, raise the appropriate error
+          // to be handlded in the HttpErrorMiddleware
+          ccRequest <- req.as[CreditCardsRequest].attempt.flatMap {
+            case Left(value) =>
+              MonadThrow[F].raiseError[CreditCardsRequest](
+                DecodeIncomingBodyFailure(value)
+              )
+            case Right(request) => Applicative[F].pure(request)
+          }
           result <- service
             .cardsForUser(
               ccRequest.username,
@@ -39,35 +47,9 @@ object Routes {
             )
             .flatMap(Ok(_))
         } yield result
-      case GET -> Root / "ping" => Ok("pong")
-
     }
 
+    HttpErrorMiddleware(routes)
   }
-
-//  def creditCardsIO(
-//      service: CreditCardsService[IO]
-//  ): HttpRoutes[IO] = {
-//    val dsl = new Http4sDsl[IO] {}
-//    import dsl._
-//
-//    implicit val creditCardsRequestDecoder
-//        : EntityDecoder[IO, CreditCardsRequest] = jsonOf[IO, CreditCardsRequest]
-//
-//    HttpRoutes.of[IO] { case req @ POST -> Root / "creditcards" =>
-//      for {
-//        ccRequest <- req.as[CreditCardsRequest]
-//        result <- service
-//          .cardsForUser(
-//            ccRequest.username,
-//            ccRequest.creditScore,
-//            ccRequest.salary
-//          )
-//          .flatMap(Ok(_))
-//      } yield result
-//
-//    }
-//
-//  }
 
 }

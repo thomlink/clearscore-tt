@@ -3,11 +3,7 @@ package creditcards.client
 import cats.MonadThrow
 import cats.effect.Concurrent
 import cats.implicits._
-import creditcards.client.model.{
-  CSCardsRequest,
-  CardsClientError,
-  SinglarCSCard
-}
+import creditcards.client.model.{CSCardsRequest, SinglarCSCard}
 import creditcards.service.model.{CreditScore, Username}
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.client.Client
@@ -43,6 +39,8 @@ class HttpCSCardsClient[F[_]: Concurrent: MonadThrow](
 
     client.run(request).use { resp =>
       // If the status is 200, attempt to decode
+      // Could be moved to a shared object, as both clients use the same logic
+      // Timeout errors raised as TimeoutExceptions, so not handled here
       resp.status.code match {
         case 200 =>
           resp

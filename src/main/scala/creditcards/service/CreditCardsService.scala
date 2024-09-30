@@ -9,6 +9,8 @@ import creditcards.service.model.CardProvider.{CSCards, ScoredCards}
 import creditcards.service.model._
 import org.typelevel.log4cats.Logger
 
+import scala.concurrent.TimeoutException
+
 trait CreditCardsService[F[_]] {
 
   def cardsForUser(
@@ -24,6 +26,11 @@ class CreditCardsServiceImpl[F[_]: MonadThrow: Logger](
     scoredCardsClient: ScoredCardsClient[F]
 ) extends CreditCardsService[F] {
 
+  /** @param cards
+    *   the list of cards from CS
+    * @return
+    *   cards with normalised eligibiliry values
+    */
   private def normaliseCsCards(cards: List[SinglarCSCard]): List[SingleCard] =
     cards.map { card =>
       SingleCard(
@@ -34,6 +41,11 @@ class CreditCardsServiceImpl[F[_]: MonadThrow: Logger](
       )
     }
 
+  /** @param cards
+    *   the list of cards from CS
+    * @return
+    *   cards with normalised eligibiliry values
+    */
   private def normaliseScoredCards(
       cards: List[SinglarScoredCard]
   ): List[SingleCard] =
@@ -48,10 +60,30 @@ class CreditCardsServiceImpl[F[_]: MonadThrow: Logger](
       )
     }
 
-  private def catchClientErrors[A](fa: F[Either[CardsClientError, A]]): F[A] =
-    EitherT(fa)
-      .leftMap(ErrorFetchingCardDetails)
-      .rethrowT
+  /** @param fa
+    *   the result of a client call
+    * @tparam A
+    *   the return type for the client call
+    * @return
+    *   the client call with errors raised
+    *
+    * This function raises the errors caught in the client layer into the
+    * service layer so that they can all be handled together in the
+    * HttpErrorMiddleware
+    */
+  private def catchClientErrors[A](fa: F[Either[CardsClientError, A]]): F[A] = {
+    val maybeResult = fa.attempt.map {
+      case Left(value) =>
+        value match {
+          case e: TimeoutException =>
+            Left[CreditCardsServiceError, A](RequestTimedOut(e))
+          case _ =>
+            Left[CreditCardsServiceError, A](UnexpectedServiceError(value))
+        }
+      case Right(value) => value.leftMap(ErrorFetchingCardDetails)
+    }
+    EitherT(maybeResult).rethrowT
+  }
 
   private def getCsCards(
       username: Username,
@@ -61,6 +93,7 @@ class CreditCardsServiceImpl[F[_]: MonadThrow: Logger](
       csCards <- catchClientErrors(
         csCardsClient.getCards(username, creditScore)
       )
+      _ <- Logger[F].info("got CS cards, normalizing scores")
       normalizedCSCards = normaliseCsCards(csCards)
     } yield normalizedCSCards
   }
@@ -78,9 +111,15 @@ class CreditCardsServiceImpl[F[_]: MonadThrow: Logger](
           salary
         )
       )
+      _ <- Logger[F].info("got CS cards, normalizing scores")
       normalizedCSCards = normaliseScoredCards(scoredCards)
     } yield normalizedCSCards
 
+  /** @param cards
+    *   the cards with normalised eligibility
+    * @return
+    *   the list of card details with the scores calculated
+    */
   private def calculateCardScores(cards: List[SingleCard]): List[CardDetails] =
     cards.map { card =>
       val cardScore = CreditCardsService.singleCardScore(card)
@@ -88,8 +127,14 @@ class CreditCardsServiceImpl[F[_]: MonadThrow: Logger](
     }
 
   private def sortCardScores(cards: List[CardDetails]): List[CardDetails] =
-    cards.sorted;
+    cards.sorted
 
+  /** @param maybeCreditScore
+    *   the raw value of the credit score
+    * @return
+    *   the validated credit score or raise an error to be handled in the
+    *   HttpErrorMiddleware
+    */
   private def validateCreditScore(
       maybeCreditScore: Int
   ): F[CreditScore] =
@@ -107,19 +152,32 @@ class CreditCardsServiceImpl[F[_]: MonadThrow: Logger](
   ): F[List[CardDetails]] =
     for {
       creditScore <- validateCreditScore(rawCreditScore)
+      _           <- Logger[F].info(s"validated creditscore: $creditScore")
       csCards     <- getCsCards(username, creditScore)
+      _           <- Logger[F].info(s"Got CS cards and normalized")
       scoredCards <- getScoredCards(username, creditScore, salary)
+      _           <- Logger[F].info(s"Got scored cards and normalized")
       cardsWithScores = calculateCardScores(csCards ++ scoredCards)
-      details         = sortCardScores(cardsWithScores)
+      _ <- Logger[F].info(s"Calculated card scores")
+      details = sortCardScores(cardsWithScores)
     } yield details
 
 }
 
 object CreditCardsService {
 
+  /** @param card
+    *   the card whose score is being calcualted
+    * @return
+    *   the calculated card score
+    */
   def singleCardScore(card: SingleCard): CardScore = {
-    CardScore(
+    val rawScore =
       card.eligibilityRating.value * Math.pow(1.0 / card.APR.value, 2)
+    // Truncate the score to 3 decimal places - multiply by 10^3, convert to int, divide by 10^3
+    val truncatedScore = Math.floor(rawScore * 1000) / 1000
+    CardScore(
+      truncatedScore
     )
   }
 

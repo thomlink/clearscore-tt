@@ -12,23 +12,26 @@ import org.typelevel.log4cats.Logger
 
 object Server {
 
-  def serve[F[_]: Async](
+  private def serve[F[_]: Async](
       routes: HttpRoutes[F],
-      errorHandler: PartialFunction[Throwable, F[Response[F]]],
       port: Port
   ): Resource[F, Server] =
     EmberServerBuilder.default
       .withHost(ipv4"0.0.0.0")
       .withPort(port)
-      .withErrorHandler(errorHandler)
       .withHttpApp(routes.orNotFound)
       .build
 
+  /**
+   * @param port the bord to bind the server to
+   * @param clients the clients for making the service
+   * @param l the logger
+   * @return the server resource to be used in main
+   */
   def serverResource(
-      config: AppConfig,
+      port: Port,
       clients: AppClients[IO]
   )(implicit l: Logger[IO]): Resource[IO, Server] = {
-
     val service =
       new CreditCardsServiceImpl[IO](
         clients.csClient,
@@ -39,8 +42,7 @@ object Server {
 
     Server.serve(
       routes,
-      HttpErrorMiddleware.handle[IO],
-      config.port
+      port
     )
   }
 

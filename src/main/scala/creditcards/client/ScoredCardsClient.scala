@@ -2,13 +2,12 @@ package creditcards.client
 
 import cats.MonadThrow
 import cats.effect.Concurrent
-import creditcards.client.model.{CSEligibility, CardsClientError, SCApprovalRating, ScoredCardsRequest, SinglarScoredCard}
-import creditcards.service.model.{APR, CardName, CreditScore, Salary, Username}
-import io.circe.generic.JsonCodec
-import org.http4s.{Method, Request, Uri}
-import org.http4s.client.Client
-import org.http4s.circe.CirceEntityCodec._
 import cats.implicits._
+import creditcards.client.model.{ScoredCardsRequest, SinglarScoredCard}
+import creditcards.service.model.{CreditScore, Salary, Username}
+import org.http4s.circe.CirceEntityCodec._
+import org.http4s.client.Client
+import org.http4s.{Method, Request, Uri}
 
 trait ScoredCardsClient[F[_]] {
 
@@ -43,6 +42,8 @@ class HttpScoredCardsClient[F[_]: Concurrent: MonadThrow](
 
     client.run(request).use { resp =>
       // If the status is 200, attempt to decode
+      // Could be moved to a shared object, as both clients use the same logic
+      // Timeout errors raised as TimeoutExceptions, so not handled here
       resp.status.code match {
         case 200 =>
           resp

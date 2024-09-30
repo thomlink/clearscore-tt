@@ -3,10 +3,16 @@ package service
 import creditcards.client.model.{CSEligibility, SCApprovalRating}
 import creditcards.service.CreditCardsService
 import creditcards.service.model.CardProvider.{CSCards, ScoredCards}
-import creditcards.service.model.{APR, CardName, CardScore, NormalisedEligibility, SingleCard}
+import creditcards.service.model.{
+  APR,
+  CardName,
+  CardScore,
+  NormalisedEligibility,
+  SingleCard
+}
 import weaver.SimpleIOSuite
 
-class CreditCardServiceUnitTestSpec extends SimpleIOSuite {
+object CreditCardServiceUnitTestSpec extends SimpleIOSuite {
 
   pureTest("""
       |Credit cards service should
@@ -52,8 +58,10 @@ class CreditCardServiceUnitTestSpec extends SimpleIOSuite {
       NormalisedEligibility.fromScoredCards(SCApprovalRating(0.8))
     )
 
-    expect(CreditCardsService.singleCardScore(cscard) == CardScore(0.135))
-    expect(CreditCardsService.singleCardScore(scoredCard) == CardScore(0.212))
+    expect(
+      CreditCardsService.singleCardScore(cscard) == CardScore(0.135) &&
+        CreditCardsService.singleCardScore(scoredCard) == CardScore(0.212)
+    )
 
   }
 

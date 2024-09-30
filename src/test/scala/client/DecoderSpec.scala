@@ -1,16 +1,11 @@
 package client
 
-import creditcards.client.model.{
-  CSEligibility,
-  SCApprovalRating,
-  SinglarCSCard,
-  SinglarScoredCard
-}
+import creditcards.client.model.{CSEligibility, SCApprovalRating, SinglarCSCard, SinglarScoredCard}
 import creditcards.service.model.{APR, CardName}
-import io.circe.syntax.EncoderOps
+import io.circe.parser.parse
 import weaver.SimpleIOSuite
 
-class DecoderSpec extends SimpleIOSuite {
+object DecoderSpec extends SimpleIOSuite {
 
   pureTest("""
       |The scored cards client
@@ -30,7 +25,10 @@ class DecoderSpec extends SimpleIOSuite {
         |]
         |""".stripMargin
 
-    val result = responseString.asJson.as[List[SinglarScoredCard]]
+    val json = parse(responseString).toOption.get
+
+    val result = json.as[List[SinglarScoredCard]]
+
     val expected = Right(
       List(
         SinglarScoredCard(
@@ -68,7 +66,10 @@ class DecoderSpec extends SimpleIOSuite {
         |]
         |""".stripMargin
 
-    val result = responseString.asJson.as[List[SinglarCSCard]]
+    val json = parse(responseString).toOption.get
+
+    val result = json.as[List[SinglarCSCard]]
+
     val expected = Right(
       List(
         SinglarCSCard(

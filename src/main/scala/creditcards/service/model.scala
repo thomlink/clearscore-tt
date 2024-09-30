@@ -34,6 +34,7 @@ object model {
     implicit val e: Encoder[Username] = deriveUnwrappedEncoder
   }
 
+  // Refined type as a credit score by definition can only be between 0 and 700
   type CreditScoreValue = Int Refined Interval.Closed[0, 700]
 
   object CreditScoreValue {
@@ -80,6 +81,7 @@ object model {
   object CardDetails {
     implicit val e: Encoder[CardDetails] = deriveEncoder
 
+    // For the .sorted function
     implicit val ordering: Ordering[CardDetails] =
       new Ordering[CardDetails] {
 
@@ -90,9 +92,9 @@ object model {
          */
         override def compare(x: CardDetails, y: CardDetails): Int = {
           if (x.cardScore.value < y.cardScore.value) {
-            -1
-          } else if (x.cardScore.value > y.cardScore.value)
             1
+          } else if (x.cardScore.value > y.cardScore.value)
+            -1
           else
             0
         }
@@ -100,11 +102,6 @@ object model {
       }
 
   }
-
-//  case class CardProvider(value: String)
-//  object CardProvider {
-//    implicit val e: Encoder[CardProvider] = deriveUnwrappedEncoder
-//  }
 
   sealed trait CardProvider extends EnumEntry
 
@@ -137,16 +134,17 @@ object model {
     implicit val e: Encoder[CardScore] = deriveUnwrappedEncoder
   }
 
+  // Keep the eligibility consistent despite different values from card providers
   case class NormalisedEligibility(value: Double)
 
   object NormalisedEligibility {
 
     def fromCSCards: CSEligibility => NormalisedEligibility = {
-      case eligibility => NormalisedEligibility(eligibility.value * 1.0)
+      case eligibility => NormalisedEligibility(eligibility.value * 10.0)
     }
 
     def fromScoredCards: SCApprovalRating => NormalisedEligibility = {
-      case eligibility => NormalisedEligibility(eligibility.value * 10.0)
+      case eligibility => NormalisedEligibility(eligibility.value * 100.0)
     }
 
   }

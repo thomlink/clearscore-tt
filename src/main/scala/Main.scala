@@ -10,17 +10,21 @@ import org.typelevel.log4cats.{LoggerFactory, SelfAwareStructuredLogger}
 
 object Main extends IOApp {
 
-  def makeClients(config: AppConfig): Resource[IO, AppClients[IO]] =
+  /** @param config
+    *   Make a resource of the clients to be used in the app, and apply the
+    *   client middleware
+    */
+  private def makeClients(config: AppConfig): Resource[IO, AppClients[IO]] =
     for {
       csCardsClient <- EmberClientBuilder
         .default[IO]
         .build
-        .map(ClientMiddleware.apply[IO](_)(config.timeout))
+        .map(ClientMiddleware.apply[IO](_)(config.timeout.value))
 
       scoredCardsClient <- EmberClientBuilder
         .default[IO]
         .build
-        .map(ClientMiddleware.apply(_)(config.timeout))
+        .map(ClientMiddleware.apply(_)(config.timeout.value))
 
       csCardsClientImpl =
         new HttpCSCardsClient[IO](csCardsClient, config.csCardsBaseUri.uri)
@@ -41,7 +45,7 @@ object Main extends IOApp {
       config <- AppConfig.read[IO]
       _ <-
         makeClients(config).flatMap { clients =>
-          Server.serverResource(config, clients)
+          Server.serverResource(config.port, clients)
         }.useForever
 
     } yield ExitCode.Success

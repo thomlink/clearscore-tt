@@ -8,7 +8,7 @@ object model {
 
   case class CreditCardsRequest(
       username: Username,
-      creditScore: Int,
+      creditScore: Int, // Validation happens in the service
       salary: Salary
   )
 
@@ -18,5 +18,7 @@ object model {
       deriveDecoder[CreditCardsRequest]
 
   }
+
+  case class DecodeIncomingBodyFailure(e: Throwable) extends Throwable
 
 }

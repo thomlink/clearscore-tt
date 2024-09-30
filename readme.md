@@ -86,13 +86,27 @@ https://app.clearscore.com/api/global/backend-tech-test/v2/doc/
 
 # Design
 
-### Key assumption
+### Key assumption 1
 Both downstream API calls return an `eligibility` / `approvalRating`, however the former is valued from 0.0
 to 10.0 and the latter from 0.0 to 1.0. I have assumed that both these values represent the same thing for
 our business logic, specifically sorting, and purely have a different scale. That is to say, that an `eligibility`
 of 5.0 is functionally the same as an  `approvalRating` of 0.5, and that they should be normalised to the same
-value.
+value, which is between 0.0 and 100.0.
 
+### Key assumption 2
+
+The card score values should be **truncated** to 3 decimal places. The examples in the assignment calculate values such as
+0.212 wheras the true value is 0.212562...
+
+### Code style
+
+I have chosen to write this app in tagless final, and inject IO at the edge layers and tests. I won't get into a discussion about
+the pros and cons of this style, as there are many and I sit pretty neutral on the matter. The big disadvantage for me can be
+ease of use and readability. The main reason for me using tagless here is that this is a coding exercise and I like to challenge
+myself, and not relying on IO is a harder challenge in my opinion, and encourages better coding practices.
+
+My key point here is that I'm not necessarily a hard believer in Tagless Final as a style and I'm perfectly happy and comfortable
+writing in IO. In essence wanted to demonstrate my ability in this exercise.
 
 ### Project structure
 
@@ -114,6 +128,14 @@ so shouldn't be forced to perform that conversion itself.
 
 This structure also gives us independent models at different layers, with the edge layers responsible for converting their
 data into the consistent domain model in the center (the service).
+
+### Considerations
+
+While there are only two clients to fetch data from now, it is likely in the real world this would be a lot higher. As a result,
+I've decided to explicity separate logic surrounding both of them, where appropriate. In practice this means that some logic is duplicated
+where it could be combined into shared logic, for example normalising the eligibility ratings of the two sets of cards. The fact that
+the data is similarly structured doesn't mean they should be coupled in the code. Normalisation, for example, for other card providers
+may require different logic. It could be moved, but the code should be separated.
 
 ### TDD
 
@@ -149,15 +171,23 @@ Specifically regarding slow responses, that can be handled in a few ways
 For this task I believe client timeouts are a simple and effective solution. Timeouts would stop the downstream service
 , which might never respond, from blocking the server. Caching would provide limited value as it is unlikely a user will need 
 to repeat requests, and the requests require username as a parameter, so multiple users with the same creditscore would return
-the same data, but would be tricky to cache together.
+the same data, but would be tricky to cache together. While its not obvious why the downstream clients require the username
+as a parameter, it would be wrong to assume that its unnecessary and create our own cache without it.
 
 I think its more important in this instance, if we imagine this is a real-world task, to ensure correctness of data. The best way to solve it
 would be a combination of all of the above methods, and return the result asynchronously. This could be done by triggering a background process
 (that would wait for the api to succeed, probably with retry & exponential backoff) and then having a different endpoint which
-would open up an SSE stream. This endpoint would require some process ID which would be returned in our initial error response to 
-the caller of this api.
+would open up an SSE stream. I believe this is too complex for this exercise and would distract from the key challenge I am solving.
 
-In summary, I will be implementing general client timeouts, with an arbitrary value which would be refined in the real world.
+Another option would be a dynamic timeout value, which increases and decreases as per the rate of timeout exceptions, to reduce the 
+waiting time if a downstream call is notoriously slow. Again, I believe this is too complex for this exercise but in a real world situation
+could be appropriate.
+
+In the real world, my approach to solving this would be first establishing why the downstream calls take too long, and use that
+to come up with a solution. For example if they were under high load, then caching and rate limiting on our side would mitigate
+this problem. Naturally, this isn't possible for this task.
+
+For this exercise I will be implementing general client timeouts, with an arbitrary value.
 
 
 #### Other errors
@@ -165,5 +195,26 @@ In summary, I will be implementing general client timeouts, with an arbitrary va
 - Client error
   - credit score must be between 0 and 700 inclusively
   - This will be caught and thrown in the service layer as that property belongs to the creditscore type
-- Service error
+
+
+## Deployment
+
+
+---
+
+## To Run
+
+### Pre-requisites
+- Java version: 1.8
+- sbt 1.10.1
+- bash 
+### Run
+Environment variables - either:
+- Export manually
+- If on linux, run `source environments/source_linux.sh`
+
+`sbt run` or `./run.sh`
+
+
+
 

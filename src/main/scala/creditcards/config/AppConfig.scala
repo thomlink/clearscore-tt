@@ -11,12 +11,13 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 case class CsCardsBaseUri(uri: Uri)
 case class ScoredCardsBaseUri(uri: Uri)
+case class TimeoutSeconds(value: Int)
 
 case class AppConfig(
     port: Port,
     csCardsBaseUri: CsCardsBaseUri,
     scoredCardsBaseUri: ScoredCardsBaseUri,
-    timeout: FiniteDuration
+    timeout: TimeoutSeconds
 )
 
 object AppConfig {
@@ -24,7 +25,7 @@ object AppConfig {
   implicit final val UriConfigDecoder: ConfigDecoder[String, Uri] =
     ConfigDecoder[String].mapOption("Uri")(u => Uri.fromString(u).toOption)
 
-  def read[F[_]: Async: MonadThrow] = {
+  def read[F[_]: Async: MonadThrow]: F[AppConfig] = {
     for {
       port <- env("HTTP_PORT").as[Int].default(8080).load[F].flatMap {
         portNumber =>
@@ -44,7 +45,8 @@ object AppConfig {
         .map(ScoredCardsBaseUri)
         .load[F]
 
-      timeout = 10.seconds
+      // Hardcoded timeout for now
+      timeout = TimeoutSeconds(10)
 
     } yield AppConfig(
       port,
