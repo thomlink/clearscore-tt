@@ -1,8 +1,13 @@
+"a short README outlining how youʼve designed your service and how youʼd
+intend to deploy it"
+
 Disclaimer: Read [Design](#Design) section for explanation on how I designed the application and the 
 intentions for deployment.
 
 The rest of this file is primarily for personal breaking down of the task, however it could still be of some use
 to the assessors.
+
+
 
 ---
 ## Task Breakdown (For personal use)
@@ -199,6 +204,26 @@ For this exercise I will be implementing general client timeouts, with an arbitr
 
 ## Deployment
 
+To deploy this application, I would:
+- Containerise using docker
+- Deploy multiple containers with a load balancer to distribute traffic between nodes
+  - Preferred deployment option would be Kubernetes
+    - deploy in a cluster for scaling and resilience
+    - Probably in combination with AWS
+- Deploy via a CI/CD pipeline
+  - Write and run tests before deployment
+    - application tests (written in scala)
+    - e2e tests
+    - integration tests
+  - Deploy to a staging environment and test manually before deploying to a production environment
+- Environment configuration
+  - Use something like Kubernetes ConfigMaps or AWS Secrets Manager to manage to environment configuration 
+- Observability:
+  - Implement metrics
+    - e.g. prometheus metrics
+  - Implement tracing
+    - Can be done at the application level using libraries such as Natchez
+- Use a tool like grafana to visualise these distributed logs/traces/metrics
 
 ---
 
